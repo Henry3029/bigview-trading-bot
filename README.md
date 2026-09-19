@@ -35,13 +35,14 @@ Automated execution paired with Alexa+ voice controls provides traders key advan
 ### 1. Backend & Alexa Fulfillment Setup
 ```bash
 # Clone repository
-git clone [https://github.com/your-username/trading-bot.git](https://github.com/your-username/trading-bot.git)
-cd trading-bot/server
+git clone [https://github.com/Henry3029/bigview-trading-bot](https://github.com/Henry3029/bigview-trading-bot)
+cd bigview-trading-bot
 
 # Install dependencies
 npm install
 Configure Environment Variables (.env)
-PORT=5000
+PORT=3001
+MONGO_URI=mongodb://localhost:27017/dbname
 ALEXA_SKILL_ID=your_alexa_skill_id
 EXCHANGE_API_KEY=your_api_key
 EXCHANGE_SECRET_KEY=your_secret_key
@@ -57,7 +58,7 @@ cd ../client
 npm install
 
 # Configure Environment Variables (.env.local)
-NEXT_PUBLIC_SOCKET_URL=http://localhost:5000
+NEXT_PUBLIC_SOCKET_URL=http://localhost:3002
 
 # Run Next.js dashboard
 npm run dev
@@ -72,6 +73,6 @@ npm install -g pm2
 
 # Start Backend Server on EC2
 cd server
-pm2 start index.js --name "trading-engine"
+pm2 start AI.ts --name "trading-engine"
 pm2 save
 pm2 startup
