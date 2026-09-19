@@ -22,7 +22,7 @@ const EngineStatusHandler = {
 
 // Build the skill & Express adapter
 const skillBuilder = Alexa.SkillBuilders.custom()
-  .addRequestHandlers(EngineStatusHandler, StopLossHandler);
+  .addRequestHandlers(EngineStatusHandler);
 
 const skill = skillBuilder.create();
 export const alexaAdapter = new ExpressAdapter(skill, false, false);

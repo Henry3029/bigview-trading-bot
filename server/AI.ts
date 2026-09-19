@@ -1,6 +1,7 @@
 import 'dotenv/config';
 
 import https from 'https';
+import { alexaAdapter } from '../alexa';
 import { systemLogsStore, engineStatesStore } from './src/store/engineStore';
 import { IncomingMessage } from 'http';
 import ccxt from 'ccxt';
@@ -46,6 +47,8 @@ const io = new Server(httpServer, {
     credentials: true,
   },
 });
+
+app.post('/api/alexa', alexaAdapter.getRequestHandlers());
 
 io.on('connection', (socket) => {
   console.log(`⚡ [Trading WebSocket] Client connected to Bot Engine: ${socket.id}`);
