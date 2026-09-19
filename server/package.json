@@ -4,8 +4,8 @@
   "description": "",
   "main": "AI.ts",
   "scripts": {
-"build": "tsc && tsc-alias --outDir ./",
- "start": "pm2 start ecosystem.config.js"
+    "build": "tsc && tsc-alias --outDir ./",
+    "start": "pm2 start ecosystem.config.js"
   },
   "repository": {
     "type": "git",
@@ -19,6 +19,8 @@
   },
   "homepage": "https://github.com/Henry3029/WEEX-AI-WARS#readme",
   "dependencies": {
+    "ask-sdk-core": "^2.14.0",
+    "ask-sdk-express-adapter": "^2.14.0",
     "bcrypt": "^6.0.0",
     "ccxt": "^4.5.64",
     "dotenv": "^17.4.2",
