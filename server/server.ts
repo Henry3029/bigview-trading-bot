@@ -25,6 +25,7 @@ mongoose.connect(MONGODB_URI)
   })
   .catch((err) => console.error('❌ [Database] Connection error:', err.message));
 
+
 // ==========================================
 // 2. EXPRESS SETUP
 // ==========================================
@@ -45,6 +46,10 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization'],
 }));
 
+// 1. Mount Alexa route directly BEFORE express.json()
+import alexaRouter from './src/routes/alexa.routes';
+app.use('/api/alexa', alexaRouter);
+
 app.use(express.json());
 
 // Catch-all for malformed JSON payloads
@@ -55,9 +60,6 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
   next();
 });
 
-// ==========================================
-// 4. MOUNT API ROUTES
-// ==========================================
 app.use('/api', apiRoutes);
 
 app.get('/', (req, res) => {

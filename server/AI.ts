@@ -1,8 +1,6 @@
 import 'dotenv/config';
 
 import https from 'https';
-import express from 'express';
-import { alexaAdapter } from './src/alexa';
 import { systemLogsStore, engineStatesStore } from './src/store/engineStore';
 import { IncomingMessage } from 'http';
 import ccxt from 'ccxt';
@@ -30,15 +28,10 @@ mongoose.connect(MONGODB_URI)
   .then(() => console.log('🍃 [Database] MongoDB connected successfully'))
   .catch((err) => console.error('❌ [Database] Connection error:', err.message));
   
-// 3. Initialize Express App
-const app = express();
-app.use(express.json()); // Essential middleware for handling JSON payloads
 
-// 4. Mount the Alexa Webhook Endpoint
-app.post('/api/alexa', alexaAdapter.getRequestHandlers());
 
 const PORT = Number(process.env.PORT) || 3001;
-const httpServer = createServer(app);
+const httpServer = createServer();
 
 const io = new Server(httpServer, {
   cors: {

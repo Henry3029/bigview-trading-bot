@@ -9,7 +9,7 @@ const router = express.Router();
 router.use('/auth', authRoutes);   
 router.use('/user', userRoutes);    
 router.use('/engine', engineRoutes); 
-router.use('/trade', tradeRoutes); 
+router.use('/trade', tradeRoutes);
 
 
 export default router;
