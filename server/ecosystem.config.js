@@ -1,10 +1,18 @@
 module.exports = {
   apps: [
     {
-      name: "bigview-backend",
-      script: "AI.ts",
-      interpreter: "node",
-      interpreterArgs: "--import tsx"
+      name: 'bigview-api',
+      script: './server.ts',
+      cwd: '/home/ubuntu/bigview-trading-bot/server',
+      interpreter: 'node',
+      interpreter_args: '--import tsx',
+    },
+    {
+      name: 'bigview-engine',
+      script: './AI.ts',
+      cwd: '/home/ubuntu/bigview-trading-bot/server',
+      interpreter: 'node',
+      interpreter_args: '--import tsx',
     }
   ]
 };
