@@ -1,21 +1,17 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { io, Socket } from 'socket.io-client';
 import { 
   Zap, 
   Activity, 
   LogOut, 
   ShieldCheck, 
   Key, 
-  User, 
-  Terminal 
+  User
 } from 'lucide-react';
-import TerminalConsole from '@/components/TerminalConsole';
 import ConnectWeexModal from '@/components/ConnectWeexModal';
 import AuthModal from '@/components/AuthModal';
 
-const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || 'https://bot.bigviewbot.online';
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://server.bigviewbot.online';
 
 export const socket: Socket = io(SOCKET_URL, {
@@ -39,79 +35,8 @@ export default function App() {
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [user, setUser] = useState<UserData | null>(null);
 
-  //  2 Engine Terminals (Major Pairs vs Altcoins)
-  const [engine1Logs, setEngine1Logs] = useState<any[]>([]);
-  const [engine2Logs, setEngine2Logs] = useState<any[]>([]);
-  const [isSocketConnected, setIsSocketConnected] = useState(false);
-
-
-  const freeUsdt = user?.freeUsdtBalance ?? 0;
-  const allocatedUsdt = user?.allocatedUsdtBalance ?? 0;
-
-  useEffect(() => {
-  const onConnect = () => setIsSocketConnected(true);
-  const onDisconnect = () => setIsSocketConnected(false);
-
-  socket.on('connect', onConnect);
-  socket.on('disconnect', onDisconnect);
-
-  if (socket.connected) {
-    setIsSocketConnected(true);
-  }
-
-  // 1️⃣ Handle explicit trade & system logs
-  const handleEngineLog = (logPayload: any) => {
-    if (!logPayload) return;
-
-    const engineIdentifier = String(logPayload.engine || logPayload.engineId || '').toUpperCase();
-
-    const isEngine1 = 
-      engineIdentifier.includes('ENGINE_1') || 
-      engineIdentifier.includes('BTC') || 
-      engineIdentifier.includes('ETH') || 
-      engineIdentifier.includes('SOL');
-
-    if (isEngine1) {
-      setEngine1Logs((prev) => [logPayload, ...prev].slice(0, 100));
-    } else {
-      setEngine2Logs((prev) => [logPayload, ...prev].slice(0, 100));
-    }
-  };
-
-  // 2️⃣ Handle live ticks & state updates (Push directly into terminal streams)
-  const handleStateUpdate = (statePayload: any) => {
-    if (!statePayload) return;
-
-    // Convert raw price payload into a terminal tick entry
-    const tickEntry = {
-      id: Date.now().toString() + Math.random().toString(36).substring(2, 5),
-      timestamp: new Date().toLocaleTimeString(),
-      type: 'TICK',
-      ...statePayload,
-    };
-
-    if (statePayload.engineId === 'ENGINE_1') {
-      setEngine1Logs((prev) => [tickEntry, ...prev].slice(0, 100));
-    } else if (statePayload.engineId === 'ENGINE_2') {
-      setEngine2Logs((prev) => [tickEntry, ...prev].slice(0, 100));
-    }
-  };
-
-  socket.on('engine_log', handleEngineLog);
-  socket.on('engine_state_update', handleStateUpdate);
-
-  return () => {
-    socket.off('connect', onConnect);
-    socket.off('disconnect', onDisconnect);
-    socket.off('engine_log', handleEngineLog);
-    socket.off('engine_state_update', handleStateUpdate);
-  };
-}, []);
-
   const handleLogout = () => {
     setUser(null);
-    setEngine1Logs([]);
-    setEngine2Logs([]);
   };
 
   return (
@@ -206,42 +131,6 @@ export default function App() {
           </div>
         </div>
       </header>
-
-      {/* ENGINE TERMINALS SECTION */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8">
-        <section className="mt-6">
-          <div className="flex items-center justify-between mb-4 border-b border-slate-800 pb-3">
-            <h3 className="text-lg font-bold text-white flex items-center gap-2">
-              <Terminal className="w-5 h-5 text-amber-500" /> Live Engine Terminal Logs
-            </h3>
-            <div className="flex items-center gap-2">
-              <span className={`w-2.5 h-2.5 rounded-full ${isSocketConnected ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500'}`} />
-              <span className="text-xs font-mono text-slate-400">
-                {isSocketConnected ? 'ONLINE' : 'OFFLINE'}
-              </span>
-            </div>
-          </div>
-
-          {!user ? (
-            <div className="p-8 text-center bg-slate-900/40 border border-slate-800 rounded-xl text-slate-400 text-sm">
-               Log in to view live real-time execution logs for Engine 1 and Engine 2.
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <TerminalConsole 
-                title="ENGINE 1: MAJOR ASSETS" 
-                logs={engine1Logs} 
-                badge="text-amber-400" 
-              />
-              <TerminalConsole 
-                title="ENGINE 2: ALTCOIN MOMENTUM" 
-                logs={engine2Logs} 
-                badge="text-cyan-400" 
-              />
-            </div>
-          )}
-        </section>
-      </main>
     </div>
   );
 }
