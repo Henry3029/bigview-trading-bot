@@ -14,11 +14,6 @@ import AuthModal from '@/components/AuthModal';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://server.bigviewbot.online';
 
-export const socket: Socket = io(SOCKET_URL, {
-  autoConnect: true,
-  transports: ['websocket', 'polling'],
-  withCredentials: true,
-});
 
 interface UserData {
   id?: string;
@@ -57,35 +52,6 @@ export default function App() {
         }}
         apiBaseUrl={API_URL}
       />
-
-      {/* HEADER */}
-      <header className="border-b border-slate-800 bg-slate-900/80 backdrop-blur sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center">
-              <Zap className="w-6 h-6 text-amber-500" />
-            </div>
-            <div>
-              <h1 className="font-bold text-lg tracking-wide text-white">
-                WEEX <span className="text-amber-500">AI BOT</span>
-              </h1>
-              <p className="text-xs text-slate-400 hidden sm:block">Automated Dual-Engine Trading Vaults</p>
-            </div>
-          </div>
-
-          {/* Balance & Auth Actions */}
-          <div className="flex items-center space-x-4">
-            <div className="hidden sm:flex items-center space-x-2 bg-slate-800/80 px-3 py-1.5 rounded-lg border border-slate-700">
-              <Activity className="w-4 h-4 text-amber-500" />
-              <span className="text-xs text-slate-400">Available:</span>
-              <span className="font-semibold text-xs text-white">${freeUsdt.toFixed(2)} USDT</span>
-            </div>
-
-            <div className="hidden sm:flex items-center space-x-2 bg-amber-500/10 px-3 py-1.5 rounded-lg border border-amber-500/30">
-              <ShieldCheck className="w-4 h-4 text-amber-500" />
-              <span className="text-xs text-amber-400">Active Pool:</span>
-              <span className="font-semibold text-xs text-amber-500">${allocatedUsdt.toFixed(2)} USDT</span>
-            </div>
 
             <div className="flex items-center space-x-3">
               {user ? (
@@ -129,8 +95,5 @@ export default function App() {
               )}
             </div>
           </div>
-        </div>
-      </header>
-    </div>
   );
 }

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Terminal } from 'lucid-react';
+import { Terminal } from 'lucide-react';
 import TerminalConsole from '@/components/TerminalConsole';
 import { io, Socket } from 'socket.io-client';
 
@@ -36,6 +36,7 @@ export default function EngineLogs() {
 
 
       setEngineLogs((prev) => [logPayload, ...prev].slice(0, 100));
+  }
     
   
     // 2️⃣ Handle live ticks & state updates (Push directly into terminal streams)
@@ -50,6 +51,7 @@ export default function EngineLogs() {
     };
 
       setEngineLogs((prev) => [tickEntry, ...prev].slice(0, 100));
+  }
 
   socket.on('engine_log', handleEngineLog);
   socket.on('engine_state_update', handleStateUpdate);
@@ -60,7 +62,7 @@ export default function EngineLogs() {
     socket.off('engine_log', handleEngineLog);
     socket.off('engine_state_update', handleStateUpdate);
   };
-}, []);
+}, [])
 
 return (
 <div className="w-full flex-1 flex flex-col gap-4">
@@ -86,7 +88,7 @@ return (
                 badge="text-amber-400" 
               />
             </div>
-          )}
+          
         </section>
       </main>
   </div>
