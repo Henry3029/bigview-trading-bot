@@ -1,6 +1,6 @@
 export type EngineType = 'MAJOR_ENGINE' | 'ALT_ENGINE';
 export type EngineStatusType = 'IN_POSITION' | 'HUNTING' | 'STOPPED' | 'ERROR';
-// Gh
+// Good 
 export interface EngineStatus {
   id: EngineType; 
   name: string;
