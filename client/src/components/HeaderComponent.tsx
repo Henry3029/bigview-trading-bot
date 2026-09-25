@@ -73,7 +73,7 @@ export default function HeaderComponent() {
               <div className="flex items-center gap-2">
                 <UserIcon className="w-4 h-4 text-amber-500" />
                 <span className="text-sm font-medium text-slate-200">
-                  {user.username || user.email || 'Trader'}
+                  {user.email || 'Trader'}
                 </span>
               </div>
 
@@ -81,7 +81,7 @@ export default function HeaderComponent() {
                 onClick={() => setIsConnectWeexOpen(true)}
                 className="text-xs px-2 py-1 bg-amber-500/10 text-amber-400 border border-amber-500/20 rounded hover:bg-amber-500/20 transition"
               >
-                {user.weexConnected ? 'WEEX Active' : 'Connect WEEX'}
+                {user.email ? 'WEEX Active' : 'Connect WEEX'}
               </button>
 
               <button
