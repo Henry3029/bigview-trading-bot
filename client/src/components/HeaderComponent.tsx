@@ -13,11 +13,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://server.bigviewbot.on
 interface UserData {
   id?: string;
   email?: string;
-  username?: string;
-  weexConnected?: boolean;
   freeUsdtBalance?: number;
-  allocatedUsdtBalance?: number;
-  [key: string]: any;
 }
 
 export default function HeaderComponent() {
@@ -116,7 +112,7 @@ export default function HeaderComponent() {
       <AuthModal
         isOpen={isAuthModalOpen}
         onClose={() => setIsAuthModalOpen(false)}
-        onSuccess={(userData) => setUser(userData)}
+        onAuthSuccess={(userData) => setUser(userData)}
       />
     </header>
   );
