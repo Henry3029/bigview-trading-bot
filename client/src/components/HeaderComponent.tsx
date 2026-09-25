@@ -25,7 +25,7 @@ export default function HeaderComponent() {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [user, setUser] = useState<UserData | null>(null);
 
-  // Restore user session on refresh
+  // Restore user session on refresh keeps a seamless interaction.
   useEffect(() => {
     const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
     if (token) {
