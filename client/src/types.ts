@@ -1,8 +1,8 @@
 export type EngineType = 'MAJOR_ENGINE' | 'ALT_ENGINE';
 export type EngineStatusType = 'IN_POSITION' | 'HUNTING' | 'STOPPED' | 'ERROR';
-
+// G
 export interface EngineStatus {
-  id: EngineType;
+  id: EngineType; 
   name: string;
   focusAssets: string[];
   currentAsset: string;
