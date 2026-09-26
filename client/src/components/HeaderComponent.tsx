@@ -21,9 +21,7 @@ export default function HeaderComponent() {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [user, setUser] = useState<UserData | null>(null);
 
-  // Restore user session on refresh keeps a seamless interaction.
-  useEffect(() => {
-  	const fetchUserSession = () => {
+const fetchUserSession = () => {
     const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
     if (token) {
       fetch(`${API_URL}/api/auth/me`, {
@@ -34,8 +32,11 @@ export default function HeaderComponent() {
           if (data.user) setUser(data.user);
         })
         .catch(() => localStorage.removeItem('token'));
-    }
-    }
+    };
+  };
+
+  // Restore user session on refresh keeps a seamless interaction.
+  useEffect(() => {
     fetchUserSession();
   }, []);
   
