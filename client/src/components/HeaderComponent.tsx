@@ -23,6 +23,7 @@ export default function HeaderComponent() {
 
   // Restore user session on refresh keeps a seamless interaction.
   useEffect(() => {
+  	const fetchUserSession = () => {
     const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
     if (token) {
       fetch(`${API_URL}/api/auth/me`, {
@@ -34,7 +35,16 @@ export default function HeaderComponent() {
         })
         .catch(() => localStorage.removeItem('token'));
     }
+    }
+    fetchUserSession();
   }, []);
+  
+  // 3. Define the onSuccess handler for WEEX connection
+const handleWeexSuccess = (weexData: any) => {
+  console.log('WEEX Connected successfully:', weexData);
+  setIsConnectWeexOpen(false); // Close the modal
+  fetchUserSession();          // Refresh the user session to reflect the active connection
+};
 
   const handleLogout = () => {
     setUser(null);
@@ -108,6 +118,7 @@ export default function HeaderComponent() {
       <ConnectWeexModal
         isOpen={isConnectWeexOpen}
         onClose={() => setIsConnectWeexOpen(false)}
+        onSuccess={handleWeexSuccess}
       />
       <AuthModal
         isOpen={isAuthModalOpen}
