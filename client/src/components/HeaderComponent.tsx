@@ -55,29 +55,10 @@ const handleWeexSuccess = (weexData: any) => {
   };
 
   return (
-    <header className="w-full bg-slate-950 border-b border-slate-800 px-6 py-4">
+    <header className="w-full bg-slate-950 border-b border-slate-800 px-5 py-3">
       <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
         
-        {/* Left: Logo + Navigation */}
-        <div className="flex items-center gap-6">
-          <Link href="/" className="flex items-center gap-3">
-            <Image
-              src="/logo.svg"
-              alt="Logo"
-              width={32}
-              height={32}
-              className="w-8 h-8 object-contain"
-              priority
-            />
-            <span className="font-bold text-slate-100 text-lg hidden sm:inline">
-              Trading Control Center
-            </span>
-          </Link>
-
-          <NavbarComponent />
-        </div>
-
-        {/* Right: User Profile Controls */}
+        {/* leftSide: User Profile Controls */}
         <div className="flex items-center gap-3">
           {user ? (
             <div className="flex items-center gap-3 bg-slate-800/80 border border-slate-700/60 px-3 py-1.5 rounded-lg">
@@ -92,7 +73,7 @@ const handleWeexSuccess = (weexData: any) => {
                 onClick={() => setIsConnectWeexOpen(true)}
                 className="text-xs px-2 py-1 bg-amber-500/10 text-amber-400 border border-amber-500/20 rounded hover:bg-amber-500/20 transition"
               >
-                {user.email ? 'WEEX Active' : 'Connect WEEX'}
+                {user.email ? 'Key Active' : 'Connect Key'}
               </button>
 
               <button
@@ -111,6 +92,21 @@ const handleWeexSuccess = (weexData: any) => {
               Sign In
             </button>
           )}
+        </div>
+        
+        
+        {/* Right: Logo + Navigation */}
+        <div className="flex items-center gap-6">
+            <Image
+              src="/bigview-image.png"
+              alt="bigviewLogo"
+              width={32}
+              height={32}
+              className="w-8 h-8 object-contain"
+              priority
+            />
+
+          <NavbarComponent />
         </div>
 
       </div>

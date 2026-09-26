@@ -34,7 +34,7 @@ export default function RootLayout({
         <HeaderComponent/>
 
         {/* Dynamic Page Views (/engine-1, /engine-2) render here */}
-        <main className="flex-1 p-6 max-w-7xl w-full mx-auto">
+        <main className="flex-1 py-6 px-3 max-w-7xl w-full mx-auto">
           {children}
         </main>
         <FooterComponent />

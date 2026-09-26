@@ -8,6 +8,20 @@ export default function NavbarComponent() {
   // 1. Single state variable to track open/closed status
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
+// Prevent background scrolling when mobile menu is open
+  useEffect(() => {
+    if (isMenuOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+
+    // Cleanup when component unmounts
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isMenuOpen]);
+
   // 2. Helper functions to update state
   const handleOpenMenu = () => setIsMenuOpen(true);
   const handleCloseMenu = () => setIsMenuOpen(false);
@@ -70,7 +84,7 @@ export default function NavbarComponent() {
 
       {/* Sliding Mobile Menu Drawer (Occupies 70% of Viewport Width from Right) */}
       <aside
-        className={`fixed top-0 right-0 bottom-0 w-[70vw] max-w-sm bg-slate-950 border-l border-slate-800 p-6 z-50 md:hidden flex flex-col justify-between transform transition-transform duration-300 ease-in-out ${
+        className={`fixed top-0 right-0 bottom-0 w-[80vw] max-w-sm bg-slate-950 border-l border-slate-800 p-6 z-50 md:hidden flex flex-col justify-between transform transition-transform duration-300 ease-in-out ${
           isMenuOpen ? 'translate-x-0' : 'translate-x-full'
         }`}
       >
