@@ -84,8 +84,8 @@ export default function NavbarComponent() {
 
       {/* Sliding Mobile Menu Drawer (Occupies 70% of Viewport Width from Right) */}
       <aside
-        className={`fixed top-0 right-0 bottom-0 w-[80vw] max-w-sm bg-slate-950 border-l border-slate-800 p-6 z-50 md:hidden flex flex-col justify-between transform transition-transform duration-300 ease-in-out ${
-          isMenuOpen ? 'translate-x-0' : 'translate-x-full'
+        className={`fixed top-0 left-0 bottom-0 w-[80vw] max-w-sm bg-slate-950 border-r border-slate-800 p-6 z-50 md:hidden flex flex-col justify-between transform transition-transform duration-300 ease-in-out ${
+          isMenuOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
         <div className="flex flex-col gap-6">
