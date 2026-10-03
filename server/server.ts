@@ -69,7 +69,7 @@ app.get('/', (req, res) => {
 
 
 // ==========================================
-// 5. START SERVER
+// 5. START SERVERs
 // ==========================================
 app.listen(SERVER_PORT, '0.0.0.0', () => {
   console.log(`🚀 [Server] Express server active on http://0.0.0.0:${SERVER_PORT}`);
