@@ -46,6 +46,10 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization'],
 }));
 
+// 2. NOW Mount Alexa route (req.body is parsed and populated)
+import alexaRouter from './src/routes/alexa.routes';
+app.use('/api/alexa', alexaRouter);
+
 // 1. Parse JSON bodies FIRST
 app.use(express.json());
 
@@ -56,10 +60,6 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
   }
   next();
 });
-
-// 2. NOW Mount Alexa route (req.body is parsed and populated)
-import alexaRouter from './src/routes/alexa.routes';
-app.use('/api/alexa', alexaRouter);
 
 app.use('/api', apiRoutes);
 
