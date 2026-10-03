@@ -1,0 +1,40 @@
+@import "tailwindcss";
+
+/* Set explicit default border colors for Light Mode and Dark Mode */
+@layer base {
+  *, ::after, ::before, ::backdrop, ::file-selector-button {
+    border-color: #e2e8f0; /* Default solid light-gray border for light mode */
+  }
+
+  .dark *, .dark ::after, .dark ::before, .dark ::backdrop, .dark ::file-selector-button {
+    border-color: rgba(255, 255, 255, 0.1); /* Default border for dark mode */
+  }
+}
+
+/* Light mode defaults */
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+}
+
+/* Dark mode applied manually via JavaScript */
+.dark {
+  --background: #0a0a0a;
+  --foreground: #ededed;
+}
+
+@theme {
+  --color-midnight: #0F172A;
+  --color-card-dark: #1E293B;
+
+  --color-gold-400: #F1C40F;
+  --color-gold-500: #D4AF37;
+  --color-gold-600: #B7950B;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
