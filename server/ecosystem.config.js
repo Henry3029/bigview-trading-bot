@@ -2,17 +2,20 @@ module.exports = {
   apps: [
     {
       name: 'bigview-api',
-      script: './server.ts',
+      script: './dist/server.js', // Points to compiled JS
       cwd: '/home/ubuntu/bigview-trading-bot/server',
-      interpreter: 'node',
-      interpreter_args: '--import tsx',
+      env: {
+        NODE_ENV: 'production',
+        SERVER_PORT: 3002,
+      },
     },
     {
       name: 'bigview-engine',
-      script: './AI.ts',
+      script: './dist/AI.js', // Points to compiled AI engine
       cwd: '/home/ubuntu/bigview-trading-bot/server',
-      interpreter: 'node',
-      interpreter_args: '--import tsx',
+      env: {
+        NODE_ENV: 'production',
+      },
     }
   ]
 };
