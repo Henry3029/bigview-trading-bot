@@ -102,6 +102,17 @@ function startSelfPinger() {
   }, 600000);
 }
 
+// Helper to check if the kill switch was triggered from the API
+async function checkKillSwitchFromDB(): Promise<boolean> {
+  try {
+    const config = await mongoose.connection.collection('system_config').findOne({ key: 'ecosystem_state' });
+    return config ? !!config.killSwitchActive : false;
+  } catch (err) {
+    return false;
+  }
+}
+
+
 async function syncOpenExchangePosition(exchange: any, assetPool: string[]): Promise<ExtendedPositionState | null> {
   try {
     const positions = await exchange.fetchPositions();
@@ -161,6 +172,29 @@ async function runTradingEngine(
 
   while (true) {
     try {
+    	// -------------------------------------------------------------
+      // STEP 0: CHECK MONGODB KILL SWITCH STATUS
+      // -------------------------------------------------------------
+      const isKillSwitchActive = await checkKillSwitchFromDB();
+      if (isKillSwitchActive) {
+        console.log(`🛑 [${engineName}] Kill switch active in DB. Pausing operations...`);
+        
+        // If holding a position when kill switch is pulled, liquidate it!
+        if (position.isHoldingPosition && !CONFIG.DRY_RUN) {
+          console.log(`🚨 [KILL SWITCH] Liquidating ${position.activeAsset} due to API kill-switch signal...`);
+          try {
+            const ticker = await exchange.fetchTicker(position.activeAsset);
+            await executeSell(exchange, position.activeAsset, position.tradeAmountUnits, ticker.last, 'API_KILL_SWITCH');
+            position = createInitialPositionState();
+          } catch (e: any) {
+            console.error(`❌ Kill switch liquidation error: ${e.message}`);
+          }
+        }
+
+        await new Promise(resolve => setTimeout(resolve, 5000));
+        continue;
+      }
+    
       // -------------------------------------------------------------
       // STEP 1: RE-SYNC EXCHANGE POSITIONS ON STARTUP
       // -------------------------------------------------------------
