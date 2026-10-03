@@ -44,6 +44,17 @@ function normalizeSymbol(rawCoin: string): string {
   return symbol.includes('/') ? symbol : `${symbol}/USDT`;
 }
 
+
+// Helper to timeout async operations safely
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  let timeoutHandle: NodeJS.Timeout;
+  const timeoutPromise = new Promise<T>((_, reject) => {
+    timeoutHandle = setTimeout(() => reject(new Error('Operation timed out')), ms);
+  });
+  return Promise.race([promise, timeoutPromise]).finally(() => clearTimeout(timeoutHandle));
+}
+
+
 // Standard APL visual card layout for Echo Show displays
 const DASHBOARD_APL_DOCUMENT = {
   type: 'APL',
@@ -342,7 +353,8 @@ const GetAssetPriceIntentHandler = {
     const pair = normalizeSymbol(rawCoin);
 
     try {
-      const ticker = await exchange.fetchTicker(pair);
+      // 5-second timeout safeguard so it never hangs indefinitely
+      const ticker: any = await withTimeout(exchange.fetchTicker(pair), 5000);
       const price = ticker.last;
 
       const speechText = `${pair.split('/')[0]} is currently trading at ${price} USDT on WEEX.`;
@@ -367,7 +379,8 @@ const GetAssetPerformanceIntentHandler = {
     const pair = normalizeSymbol(rawCoin);
 
     try {
-      const ticker = await exchange.fetchTicker(pair);
+      // 5-second timeout safeguard
+      const ticker: any = await withTimeout(exchange.fetchTicker(pair), 5000);
       const change = ticker.percentage ? ticker.percentage.toFixed(2) : '0';
       const isPositive = parseFloat(change) >= 0;
 
