@@ -3,6 +3,7 @@ import 'dotenv/config';
 import cors from 'cors';
 import { isOriginAllowed } from './src/config/cors';
 import express from 'express';
+import alexaRouter from './src/routes/alexa.routes';
 import apiRoutes from './src/routes/index.js';
 import mongoose from 'mongoose';
 
@@ -46,11 +47,7 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization'],
 }));
 
-// 2. NOW Mount Alexa route (req.body is parsed and populated)
-import alexaRouter from './src/routes/alexa.routes';
-app.use('/api/alexa', alexaRouter);
-
-// 1. Parse JSON bodies FIRST
+// 1. Parse JSON bodies FIRST so req.body is populated
 app.use(express.json());
 
 // Catch-all for malformed JSON payloads
@@ -61,15 +58,18 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
   next();
 });
 
+// 2. NOW Mount Alexa route (req.body is fully parsed)
+app.use('/api/alexa', alexaRouter);
+
 app.use('/api', apiRoutes);
 
-app.get('/', (req, res) => {
+app.get('/', (_req, res) => {
   res.json({ status: "online", engine: "WEEX Dual AI Engine Active" });
 });
 
 
 // ==========================================
-// 5. START SERVERs
+// 3. START SERVER
 // ==========================================
 app.listen(SERVER_PORT, '0.0.0.0', () => {
   console.log(`🚀 [Server] Express server active on http://0.0.0.0:${SERVER_PORT}`);
