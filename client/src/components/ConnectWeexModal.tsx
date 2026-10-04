@@ -56,12 +56,12 @@ if (!contentType || !contentType.includes('application/json')) {
 
 const data = await res.json();
 
-      if (!res.ok) throw new Error(data.error || 'Failed to connect WEEX API keys.');
+      if (!res.ok) throw new Error(data.error || 'Failed to connect exchange API keys.');
 
       onSuccess(data);
       onClose();
     } catch (err: any) {
-      setError(err.message || 'Connection failed. Please check your WEEX keys.');
+      setError(err.message || 'Connection failed. Please check your exchange keys.');
     } finally {
       setLoading(false);
     }

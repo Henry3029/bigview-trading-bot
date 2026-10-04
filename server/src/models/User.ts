@@ -30,12 +30,24 @@ const UserSchema = new Schema(
       required: false, 
     },
 
-    // Application Balances
-    freeUsdtBalance: {
-      type: Number,
-      default: 1000.0,
-      min: 0,
-    },
+   // Add to your UserSchema
+feeBalanceBaseline: {
+ type: Number,
+ default: 0 
+}, // Starting balance
+highWaterMark: {
+ type: Number,
+ default: 0 
+},       // Peak balance reached
+unpaidFeesUsdt: {
+ type: Number,
+ default: 0 
+},      // Accrued platform fee owed
+isBotActive: {
+  type: Boolean,
+  default: false, // Defaults to false for user safety!
+},
+
 
     // -------------------------------------------------------------
     // NEW FIELDS: Alexa & WEEX Exchange Integration

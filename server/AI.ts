@@ -13,12 +13,12 @@ import { CONFIG } from './src/config';
 import { calculateDynamicAmount } from './src/strategy';
 import { createInitialPositionState, processActivePosition, executeSell } from './src/tradeManager';
 import { ExtendedPositionState } from './src/tradeManager';
+import { decrypt } from './src/utils/crypto.utils';
+import User from './src/models/User';
 
 // Diagnostics
 console.log("===[ ENV DIAGNOSTICS ]===");
-console.log("API Key loaded:", process.env.WEEX_API_KEY ? "YES (Length: " + process.env.WEEX_API_KEY.length + ")" : "NO/UNDEFINED");
-console.log("Secret loaded:", process.env.WEEX_SECRET_KEY ? "YES" : "NO/UNDEFINED");
-console.log("Passphrase loaded:", process.env.WEEX_PASSPHRASE ? "YES" : "NO/UNDEFINED");
+console.log("Server environment loaded successfully.");
 console.log("=========================");
 
 // Initialize MongoDB Connection
@@ -112,7 +112,6 @@ async function checkKillSwitchFromDB(): Promise<boolean> {
   }
 }
 
-
 async function syncOpenExchangePosition(exchange: any, assetPool: string[]): Promise<ExtendedPositionState | null> {
   try {
     const positions = await exchange.fetchPositions();
@@ -152,11 +151,10 @@ async function syncOpenExchangePosition(exchange: any, assetPool: string[]): Pro
 }
 
 // ==========================================
-// GLOBAL ECOSYSTEM STATE TRACKER
+// TRADING ENGINE CORE LOOP (Per User)
 // ==========================================
-let isGlobalMarketBullish = false;
-
 async function runTradingEngine(
+  userId: string,
   engineName: string,
   exchange: any,
   assetPool: string[],
@@ -164,76 +162,53 @@ async function runTradingEngine(
 ) {
   let currentAssetIndex = 0;
   let peakAvailableUSDT = 0;
+  let isGlobalMarketBullish = false;
 
   let position: ExtendedPositionState = createInitialPositionState();
 
-  console.log(`🚀 [${engineName}] Engine Initialized across pool: ${assetPool.join(', ')}`);
-  emitSystemLog(engineName, 'INFO', `Engine initialized across pool: ${assetPool.join(', ')}`);
+  console.log(`🚀 [User ${userId} - ${engineName}] Engine Initialized across pool: ${assetPool.join(', ')}`);
 
   while (true) {
     try {
-    	// -------------------------------------------------------------
-      // STEP 0: CHECK MONGODB KILL SWITCH STATUS
-      // -------------------------------------------------------------
       const isKillSwitchActive = await checkKillSwitchFromDB();
       if (isKillSwitchActive) {
-        console.log(`🛑 [${engineName}] Kill switch active in DB. Pausing operations...`);
-        
-        // If holding a position when kill switch is pulled, liquidate it!
         if (position.isHoldingPosition && !CONFIG.DRY_RUN) {
-          console.log(`🚨 [KILL SWITCH] Liquidating ${position.activeAsset} due to API kill-switch signal...`);
           try {
             const ticker = await exchange.fetchTicker(position.activeAsset);
             await executeSell(exchange, position.activeAsset, position.tradeAmountUnits, ticker.last, 'API_KILL_SWITCH');
             position = createInitialPositionState();
           } catch (e: any) {
-            console.error(`❌ Kill switch liquidation error: ${e.message}`);
+            console.error(`❌ Kill switch liquidation error for user ${userId}: ${e.message}`);
           }
         }
-
         await new Promise(resolve => setTimeout(resolve, 5000));
         continue;
       }
     
-      // -------------------------------------------------------------
-      // STEP 1: RE-SYNC EXCHANGE POSITIONS ON STARTUP
-      // -------------------------------------------------------------
       if (!position.isHoldingPosition && !CONFIG.DRY_RUN) {
         const syncedPosition = await syncOpenExchangePosition(exchange, assetPool);
         if (syncedPosition) {
           position = syncedPosition;
-          
           if (engineName === 'ENGINE_1') {
             isGlobalMarketBullish = true;
-            console.log(`⚡ [GLOBAL TRIGGER] ENGINE_1 active trade synced on startup. Ecosystem UNLOCKED!`);
           }
         }
       }
 
       const activeAsset = position.isHoldingPosition ? position.activeAsset : assetPool[currentAssetIndex];
 
-      // -------------------------------------------------------------
-      // STEP 2: TICKER FETCH & LIVE BROADCAST
-      // -------------------------------------------------------------
       const ticker = await exchange.fetchTicker(activeAsset);
       const currentPrice = ticker.last as number;
 
-      emitEngineState(engineName, {
+      emitEngineState(`${userId}_${engineName}`, {
         currentAsset: activeAsset,
         currentPrice: currentPrice,
         pnlPercentage: position.isHoldingPosition ? calculateLivePnL(position, currentPrice) : 0,
         status: position.isHoldingPosition ? 'IN_POSITION' : (isGlobalMarketBullish || engineName === 'ENGINE_1' ? 'BUYING' : 'STANDBY')
       });
 
-      // -------------------------------------------------------------
-      // MODE A: MONITORING ACTIVE POSITION (Managing Exits & Rotation)
-      // -------------------------------------------------------------
       if (position.isHoldingPosition) {
-        // EMERGENCY ECOSYSTEM SELL: If Engine 1 exited/dropped, secondary engines MUST SELL IMMEDIATELY
         if (engineName !== 'ENGINE_1' && !isGlobalMarketBullish) {
-          console.log(`🚨 [ECOSYSTEM DUMP EMERGENCY] Engine 1 collapsed! ${engineName} selling ${position.activeAsset} immediately!`);
-          emitSystemLog(engineName, 'STOP_LOSS', `Emergency sell triggered on ${position.activeAsset} due to Engine 1 collapse.`);
-
           const soldSuccessfully = await executeSell(
             exchange, 
             position.activeAsset, 
@@ -250,53 +225,32 @@ async function runTradingEngine(
         }
 
         const wasHoldingBefore = position.isHoldingPosition;
-
-        // Process active trade
         position = await processActivePosition(exchange, position, currentPrice, io, engineName);
 
-        // Handle Exit State & Selective Rotation
         if (wasHoldingBefore && !position.isHoldingPosition) {
           const exitReason = position.lastExitReason || '';
 
-          // ROTATE ONLY ON INTERNAL HARD STOP LOSS (-1.00%)
           if (exitReason === 'HARD_STOP_LOSS_HIT' || exitReason === 'ENGINE_1_MINUS_1_PCT_CUT') {
-            const previousAsset = assetPool[currentAssetIndex];
             currentAssetIndex = (currentAssetIndex + 1) % assetPool.length;
-            const nextAsset = assetPool[currentAssetIndex];
-
-            console.log(`🔄 [${engineName} ROTATION] Hard Stop Loss hit on ${previousAsset}. Rotating to next asset: ${nextAsset}`);
-            emitSystemLog(engineName, 'INFO', `Hard stop hit. Rotated asset from ${previousAsset} to ${nextAsset}`);
-          } else {
-            console.log(`📌 [${engineName} NO ROTATION] Trade closed via (${exitReason}). Remaining on current asset: ${assetPool[currentAssetIndex]}`);
           }
 
-          // IF ENGINE_1 CLOSED (STOP LOSS OR TAKE PROFIT), LOCK GLOBAL ECOSYSTEM
           if (engineName === 'ENGINE_1') {
             isGlobalMarketBullish = false;
-            console.log(`🛑 [GLOBAL TRIGGER] ENGINE_1 exited position. Locking ecosystem & signaling secondary engines to liquidate!`);
-            emitSystemLog('GLOBAL', 'INFO', 'BTC trade closed. Secondary engines instructed to sell immediately.');
           }
         }
 
       } else {
-        // -------------------------------------------------------------
-        // MODE B: IMMEDIATE MARKET BUY
-        // -------------------------------------------------------------
-
-        // Gatekeeper check: Secondary engines wait for ENGINE_1
         if (engineName !== 'ENGINE_1' && !isGlobalMarketBullish) {
           await new Promise(resolve => setTimeout(resolve, CONFIG.POLL_INTERVAL_MS));
           continue;
         }
-
-        console.log(`⚡ [${engineName}] Triggering IMMEDIATE MARKET BUY for ${activeAsset}...`);
 
         let fetchedBalance = 0;
         try {
           const balance = await exchange.fetchBalance();
           fetchedBalance = parseFloat(balance.USDT?.free || 0);
         } catch (balErr: any) {
-          console.warn(`⚠️ [${engineName}] Balance fetch failed: ${balErr.message}`);
+          console.warn(`⚠️ [User ${userId} - ${engineName}] Balance fetch failed: ${balErr.message}`);
         }
 
         const currentAvailableUSDT = fetchedBalance > 0 ? fetchedBalance : (CONFIG.DRY_RUN ? 20000 : 0);
@@ -309,7 +263,6 @@ async function runTradingEngine(
         const dynamicMargin = effectiveCapitalBase * marginAllocationRatio;
 
         if (dynamicMargin < 1) {
-          console.log(`⚠️ [${engineName}] Insufficient margin ($${dynamicMargin.toFixed(2)}). Waiting...`);
           await new Promise(resolve => setTimeout(resolve, CONFIG.POLL_INTERVAL_MS));
           continue;
         }
@@ -323,30 +276,23 @@ async function runTradingEngine(
         );
 
         if (rawTradeAmount <= 0) {
-          console.warn(`⚠️️ [${engineName}] Calculated trade amount <= 0 for ${activeAsset}. Waiting...`);
           await new Promise(resolve => setTimeout(resolve, CONFIG.POLL_INTERVAL_MS));
           continue;
         }
 
         let tradeAmount = parseFloat(exchange.amountToPrecision(activeAsset, rawTradeAmount));
         const entryPrice = currentPrice;
-
         let orderSuccessful = false;
 
         if (!CONFIG.DRY_RUN) {
           try {
-            console.log(`📡 [${engineName}] Market Order Fired: Buying ${tradeAmount} units of ${activeAsset} @ ~$${entryPrice}`);
             await exchange.createMarketBuyOrder(activeAsset, tradeAmount, { 'positionSide': 'LONG' });
             orderSuccessful = true;
           } catch (tradeError: any) {
-            console.error(`❌ [${engineName} ORDER REJECTED] Primary buy failed: ${tradeError.message}`);
-            
             try {
-              console.log(`🔄 [${engineName}] Retrying order without positionSide parameter...`);
               await exchange.createMarketBuyOrder(activeAsset, tradeAmount);
               orderSuccessful = true;
             } catch (fallbackError: any) {
-              console.error(`❌ [${engineName} FALLBACK REJECTED] ${fallbackError.message}`);
               orderSuccessful = false;
             }
           }
@@ -371,75 +317,126 @@ async function runTradingEngine(
 
           if (engineName === 'ENGINE_1') {
             isGlobalMarketBullish = true;
-            console.log(`🚀 [GLOBAL TRIGGER] ENGINE_1 bought BTC! Instantly launching ENGINES 2-5!`);
-            emitSystemLog('GLOBAL', 'INFO', 'BTC trade opened! Secondary engines unlocked for immediate execution.');
           }
-
-          emitSystemLog(engineName, 'BUY', `Bought ${tradeAmount} ${activeAsset} at $${entryPrice}`);
-        } else {
-          console.warn(`⚠️ [${engineName}] Order execution failed. State untouched. Retrying on next loop tick...`);
         }
       }
     } catch (networkError: any) {
-      console.warn(`[${engineName} Network Warning] ${networkError.message}`);
+      console.warn(`[User ${userId} - ${engineName} Network Warning] ${networkError.message}`);
     }
 
     await new Promise(resolve => setTimeout(resolve, CONFIG.POLL_INTERVAL_MS));
   }
 }
 
-// Master Launcher
-async function startTradingEngine() {
-  const exchange = new ccxt.weex({
-    'apiKey': process.env.WEEX_API_KEY,
-    'secret': process.env.WEEX_SECRET_KEY,
-    'password': process.env.WEEX_PASSPHRASE,
-    'timeout': 10000,
-    'enableRateLimit': true,
-    'options': { 'defaultType': 'swap' }
-  });
+// ==========================================
+// MASTER MULTI-USER WORKER LAUNCHER
+// ==========================================
+const activeUserWorkers = new Set<string>();
 
-  try {
-    console.log("╔════════════════════════════════════════════════════════╗");
-    console.log("║              WEEX DUAL AI ENGINE ACTIVATED             ║");
-    console.log("╚════════════════════════════════════════════════════════╝");
+async function startMultiUserTradingSystem() {
+  console.log("╔════════════════════════════════════════════════════════╗");
+  console.log("║         WEEX MULTI-USER AI ENGINE WORKER ACTIVE        ║");
+  console.log("╚════════════════════════════════════════════════════════╝");
 
-    await exchange.loadMarkets();
+  startSelfPinger();
+  
+  // Keep track of active worker threads globally so we can kill them if turned off
+  const activeUserWorkers = new Map<string, AbortController>();
 
-    const allAssets = Array.from(
-      new Set([
-        ...CONFIG.ENGINE_ONE,
-        ...CONFIG.ENGINE_TWO,
-        ...CONFIG.ENGINE_THREE,
-        ...CONFIG.ENGINE_FOUR,
-        ...CONFIG.ENGINE_FIVE
-      ])
-    );
+  // Inside your continuous discovery `while (true)` loop:
+  while (true) {
+    try {
+      // 1. Fetch ALL users who have keys saved
+      const registeredUsers = await User.find({ 
+        weexApiKey: { $ne: null }, 
+        weexSecretKey: { $ne: null } 
+      });
 
-    for (const asset of allAssets) {
-      try {
-        await exchange.setLeverage(CONFIG.LEVERAGE_LIMIT, asset);
-        console.log(`✔️ Leverage set to ${CONFIG.LEVERAGE_LIMIT}x for ${asset}`);
-      } catch (err: any) {
-        console.warn(`⚠️ [API Skip] Could not set leverage for ${asset}: ${err.message}`);
+      const activeUserIds = new Set<string>();
+
+      for (const user of registeredUsers) {
+        const userIdStr = user._id.toString();
+
+        // Check if user wants the bot active AND has keys
+        if (user.isBotActive) {
+          activeUserIds.add(userIdStr);
+
+          // If their worker isn't running yet, spin it up!
+          if (!activeUserWorkers.has(userIdStr)) {
+            const abortController = new AbortController();
+            activeUserWorkers.set(userIdStr, abortController);
+
+            // Spin up asynchronously
+            (async () => {
+              try {
+                console.log(`🔑 [Multi-User Engine] Starting bot for user: ${userIdStr}`);
+                
+                const decryptedSecret = decrypt(user.weexSecretKey);
+                const decryptedPassphrase = user.weexPassphrase ? decrypt(user.weexPassphrase) : undefined;
+
+                const userExchange = new ccxt.weex({
+                  apiKey: user.weexApiKey,
+                  secret: decryptedSecret,
+                  password: decryptedPassphrase,
+                  timeout: 10000,
+                  enableRateLimit: true,
+                  options: { defaultType: 'swap' }
+                });
+
+                await userExchange.loadMarkets();
+
+                const allAssets = Array.from(
+                  new Set([
+                    ...CONFIG.ENGINE_ONE,
+                    ...CONFIG.ENGINE_TWO,
+                    ...CONFIG.ENGINE_THREE,
+                    ...CONFIG.ENGINE_FOUR,
+                    ...CONFIG.ENGINE_FIVE
+                  ])
+                );
+
+                for (const asset of allAssets) {
+                  try {
+                    await userExchange.setLeverage(CONFIG.LEVERAGE_LIMIT, asset);
+                  } catch (err: any) {
+                    // Skip if leverage setup fails for a specific asset
+                  }
+                }
+
+                // Run engines concurrently for this user
+                await Promise.all([
+                  runTradingEngine(userIdStr, "ENGINE_1", userExchange, CONFIG.ENGINE_ONE, 0.20),
+                  runTradingEngine(userIdStr, "ENGINE_2", userExchange, CONFIG.ENGINE_TWO, 0.10),
+                  runTradingEngine(userIdStr, "ENGINE_3", userExchange, CONFIG.ENGINE_THREE, 0.10),
+                  runTradingEngine(userIdStr, "ENGINE_4", userExchange, CONFIG.ENGINE_FOUR, 0.10),
+                  runTradingEngine(userIdStr, "ENGINE_5", userExchange, CONFIG.ENGINE_FIVE, 0.10)
+                ]);
+
+              } catch (userEngineErr: any) {
+                console.error(`❌ Engine failure for user ${userIdStr}:`, userEngineErr.message);
+                activeUserWorkers.delete(userIdStr);
+              }
+            })();
+          }
+        }
       }
+
+      // 2. Shut down workers for users who turned their bot OFF
+      for (const [userIdStr, controller] of activeUserWorkers.entries()) {
+        if (!activeUserIds.has(userIdStr)) {
+          console.log(`🛑 [Multi-User Engine] User ${userIdStr} turned off their bot. Stopping worker...`);
+          activeUserWorkers.delete(userIdStr);
+        }
+      }
+
+    } catch (pollErr: any) {
+      console.error(`❌ User discovery loop error:`, pollErr.message);
     }
 
-    startSelfPinger();
-
-    // Launch engines concurrently
-    await Promise.all([
-      runTradingEngine("ENGINE_1", exchange, CONFIG.ENGINE_ONE, 0.20),
-      runTradingEngine("ENGINE_2", exchange, CONFIG.ENGINE_TWO, 0.10),
-      runTradingEngine("ENGINE_3", exchange, CONFIG.ENGINE_THREE, 0.10),
-      runTradingEngine("ENGINE_4", exchange, CONFIG.ENGINE_FOUR, 0.10),
-      runTradingEngine("ENGINE_5", exchange, CONFIG.ENGINE_FIVE, 0.10)
-    ]);
-
-  } catch (criticalError: any) {
-    console.error("❌ CRITICAL: Engine initialization failed:", criticalError.message);
-    process.exit(1);
+    // Check every 1 minute for toggle updates
+    await new Promise(resolve => setTimeout(resolve, 60 * 1000));
   }
-}
+} // <-- Closing bracket for startMultiUserTradingSystem function
 
-startTradingEngine();
+// Start the multi-user ecosystem daemon
+startMultiUserTradingSystem();

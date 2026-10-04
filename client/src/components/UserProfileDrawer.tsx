@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { X, User as UserIcon, Key, LogOut } from 'lucide-react';
+import BotToggleCard from './BotToggleCard';
 
 interface User {
   email?: string;
@@ -88,6 +89,7 @@ export default function UserProfileDrawer({
               </button>
             </div>
           </div>
+          <BotToggleCard />
         </div>
 
         {/* Footer Logout Action */}
