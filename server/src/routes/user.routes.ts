@@ -1,5 +1,4 @@
 import express from 'express';
-import { verifyToken } from '../middleware/auth.middleware';
 import mongoose from 'mongoose';
 import User from '@/models/User';
 import { connectToDatabase } from '@/lib/mongodb';
