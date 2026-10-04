@@ -1,4 +1,5 @@
 import express from 'express';
+import { verifyToken } from '../middleware/auth.middleware';
 import mongoose from 'mongoose';
 import User from '@/models/User';
 import { connectToDatabase } from '@/lib/mongodb';
@@ -29,6 +30,37 @@ router.get('/me', authenticateToken, async (req: AuthenticatedRequest, res: Resp
     });
   } catch (err: any) {
     return res.status(500).json({ error: err.message });
+  }
+});
+
+
+router.post('/link-alexa', verifyToken, async (req: any, res: any) => {
+  try {
+    const { alexaUserId } = req.body;
+    
+    // The userId is automatically extracted from the verified JWT by your middleware!
+    const userId = req.user?.userId; 
+
+    if (!alexaUserId || !userId) {
+      return res.status(400).json({ success: false, error: 'Missing alexaUserId or user token data' });
+    }
+
+    await connectToDatabase();
+    const usersCollection = mongoose.connection.collection('users');
+
+    // Bind the Amazon Alexa ID to the MongoDB user document
+    const result = await usersCollection.updateOne(
+      { _id: new mongoose.Types.ObjectId(userId) },
+      { $set: { alexaUserId: alexaUserId } }
+    );
+
+    if (result.matchedCount === 0) {
+      return res.status(404).json({ success: false, error: 'User not found in database' });
+    }
+
+    return res.json({ success: true, message: 'Alexa account successfully linked!' });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, error: err.message });
   }
 });
 

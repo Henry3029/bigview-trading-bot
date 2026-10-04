@@ -8,6 +8,8 @@ import {
   setEmergencyKillSwitchState, 
   setGlobalMarketBullish 
 } from './serverState';
+import { connectToDatabase } from '@/lib/mongodb';
+import mongoose from 'mongoose';
 import { DEMO_JUDGE_USER } from './store/demoProfile';
 import { systemLogsStore } from './store/engineStore';
 
@@ -157,11 +159,42 @@ export const GetPortfolioBalanceIntentHandler = {
     );
   },
   async handle(handlerInput: any) {
-    const totalUsdt = DEMO_JUDGE_USER.portfolioValueUsd.toFixed(2);
-    const freeUsdt = DEMO_JUDGE_USER.availableBalanceUsd.toFixed(2);
-    const isPaused = isEmergencyKillSwitchActive();
+    // 1. Extract the unique Amazon User ID from the incoming voice request
+    const alexaUserId = handlerInput.requestEnvelope.context?.System?.user?.userId;
 
-    const speechText = `Welcome Judge. Your portfolio valuation is $${totalUsdt} USDT, with $${freeUsdt} USDT available.`;
+    let totalUsdt = "0.00";
+    let freeUsdt = "0.00";
+    let winRate = DEMO_JUDGE_USER.winRatePercentage.toString();
+    let activeCount = DEMO_JUDGE_USER.activeEnginesCount;
+    let welcomeName = "Judge";
+
+    try {
+      // 2. Connect to your production MongoDB Atlas cluster
+      await connectToDatabase();
+      const usersCollection = mongoose.connection.collection('users');
+
+      // 3. Search for a user whose document has this alexaUserId linked
+      const dbUser = await usersCollection.findOne({ alexaUserId });
+
+      if (dbUser) {
+        // Real Linked User Found in MongoDB!
+        welcomeName = dbUser.name || dbUser.email?.split('@')[0] || "Trader";
+        totalUsdt = (dbUser.portfolioValueUsd || 1000.00).toFixed(2);
+        freeUsdt = (dbUser.availableBalanceUsd || 500.00).toFixed(2);
+      } else {
+        // Fallback: If no account is linked yet (e.g. the Judge testing), use demo data
+        welcomeName = "Judge";
+        totalUsdt = DEMO_JUDGE_USER.portfolioValueUsd.toFixed(2);
+        freeUsdt = DEMO_JUDGE_USER.availableBalanceUsd.toFixed(2);
+      }
+    } catch (err) {
+      console.error("❌ Database lookup failed in Alexa handler, using demo fallback:", err);
+      totalUsdt = DEMO_JUDGE_USER.portfolioValueUsd.toFixed(2);
+      freeUsdt = DEMO_JUDGE_USER.availableBalanceUsd.toFixed(2);
+    }
+
+    const isPaused = isEmergencyKillSwitchActive();
+    const speechText = `Welcome ${welcomeName}. Your portfolio valuation is $${totalUsdt} USDT, with $${freeUsdt} USDT available.`;
 
     const responseBuilder = handlerInput.responseBuilder.speak(speechText);
 
@@ -175,12 +208,12 @@ export const GetPortfolioBalanceIntentHandler = {
           payload: {
             title: 'Portfolio Overview',
             primaryMetric: `${totalUsdt} USDT`,
-            statusText: isPaused ? 'PAUSED (Kill Switch)' : 'ACTIVE (5/5 Engines Running)',
+            statusText: isPaused ? 'PAUSED (Kill Switch)' : `ACTIVE (${activeCount} Engines Running)`,
             statusColor: isPaused ? '#FF3333' : '#00FF66',
             items: [
               { primaryText: `Available Balance: $${freeUsdt} USDT` },
-              { primaryText: `Win Rate: ${DEMO_JUDGE_USER.winRatePercentage}%` },
-              { primaryText: `Active Engines: ${DEMO_JUDGE_USER.activeEnginesCount}` }
+              { primaryText: `Win Rate: ${winRate}%` },
+              { primaryText: `Active Engines: ${activeCount}` }
             ]
           }
         }
