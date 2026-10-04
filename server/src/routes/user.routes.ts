@@ -34,7 +34,7 @@ router.get('/me', authenticateToken, async (req: AuthenticatedRequest, res: Resp
 });
 
 
-router.post('/link-alexa', verifyToken, async (req: any, res: any) => {
+router.post('/link-alexa', authenticateToken, async (req: any, res: any) => {
   try {
     const { alexaUserId } = req.body;
     

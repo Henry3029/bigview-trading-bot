@@ -21,13 +21,13 @@ const UserSchema = new Schema(
     email: {
       type: String,
       unique: true,
-      sparse: true, // Allows wallet users to sign up without requiring an email
+      sparse: true, 
       lowercase: true,
       trim: true,
     },
     passwordHash: {
       type: String,
-      required: false, // Optional so wallet-only users don't break validation
+      required: false, 
     },
 
     // Application Balances
@@ -35,6 +35,28 @@ const UserSchema = new Schema(
       type: Number,
       default: 1000.0,
       min: 0,
+    },
+
+    // -------------------------------------------------------------
+    // NEW FIELDS: Alexa & WEEX Exchange Integration
+    // -------------------------------------------------------------
+    alexaUserId: {
+      type: String,
+      default: null,
+      index: true,
+      sparse: true,
+    },
+    weexApiKey: {
+      type: String,
+      default: null,
+    },
+    weexSecretKey: {
+      type: String,
+      default: null, // Stores the encrypted secret key
+    },
+    weexPassphrase: {
+      type: String,
+      default: null, // Stores the encrypted passphrase
     },
   },
   {

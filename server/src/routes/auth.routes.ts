@@ -1,12 +1,14 @@
-import express, { Request, Response, NextFunction } from 'express';
+import express, { Request, Response } from 'express';
 import { DEMO_JUDGE_USER, seedDemoData } from '../store/demoProfile';
 import bcrypt from 'bcrypt';
 import { ethers } from 'ethers';
 import * as crypto from 'crypto';
+import { encrypt, decrypt } from '../utils/crypto.utils';
 import ccxt from 'ccxt';
 import { connectToDatabase } from '@/lib/mongodb';
 import jwt from 'jsonwebtoken';
 import User from '@/models/User';
+import { authenticateToken, AuthenticatedRequest } from '../middleware/auth.middleware';
 
 const router = express.Router();
 const JWT_SECRET = process.env.JWT_SECRET || 'your_fallback_jwt_secret';
@@ -106,7 +108,6 @@ router.post('/login', async (req: Request, res: Response) => {
   // DEMO CREDENTIAL INTERCEPTOR FOR HACKATHON EVALUATORS
   // ------------------------------------------------------------------
   if (email === 'judge_demo@example.com' && password === 'Hackathon2026') {
-    // Seed in-memory engine states & trade history logs
     seedDemoData();
 
     return res.status(200).json({
@@ -146,10 +147,11 @@ router.post('/login', async (req: Request, res: Response) => {
 });
 
 // -------------------------------------------------------------
-// 4. WEEX API KEYS AUTHENTICATION
+// 4. WEEX API KEYS AUTHENTICATION & STORAGE
 // -------------------------------------------------------------
-router.post('/weex-keys', async (req: Request, res: Response) => {
+router.post('/weex-keys', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
   const { apiKey, apiSecret, passphrase } = req.body;
+  const userId = req.userId;
 
   if (!apiKey || !apiSecret) {
     return res.status(400).json({ 
@@ -158,26 +160,34 @@ router.post('/weex-keys', async (req: Request, res: Response) => {
   }
 
   try {
+    // 1. Test live against WEEX using the raw plain-text secret supplied by user
     const exchange = new ccxt.weex({
       apiKey: apiKey,
       secret: apiSecret,
       password: passphrase,
       enableRateLimit: true,
+      options: { defaultType: 'swap' }
     });
 
     const balance = await exchange.fetchBalance();
-    
     const freeBalances = (balance as any)?.free;
     const usdtBalance = freeBalances ? Number(freeBalances['USDT'] ?? 0) : 0;
 
+    // 2. Encrypt sensitive keys before saving them securely to MongoDB
+    const encryptedSecret = encrypt(apiSecret);
+    const encryptedPassphrase = passphrase ? encrypt(passphrase) : undefined;
+
+    await connectToDatabase();
+    await User.findByIdAndUpdate(userId, {
+      weexApiKey: apiKey,
+      weexSecretKey: encryptedSecret,
+      weexPassphrase: encryptedPassphrase,
+      availableBalanceUsd: usdtBalance
+    });
+
     return res.status(200).json({
-      message: 'WEEX connection successful!',
-      user: {
-        username: 'WEEX Trader',
-        apiKey: apiKey,
-      },
-      balance: usdtBalance,
-      token: JWT_SECRET
+      message: 'WEEX connection successful and keys saved!',
+      balance: usdtBalance
     });
 
   } catch (error: any) {
