@@ -1,8 +1,15 @@
+'use client';
+
 import React, { useState, useEffect } from 'react';
+
 const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || '';
 
 interface UserProfileResponse {
-  isBotActive: boolean;
+  user: {
+    isBotActive?: boolean;
+    [key: string]: any;
+  };
+  isBotActive?: boolean;
   [key: string]: any;
 }
 
@@ -24,14 +31,21 @@ export default function BotToggleCard() {
 
   const fetchUserData = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${apiBaseUrl}/api/user/profile`, {
+      // Check both common storage keys for robustness
+      const token = localStorage.getItem('token') || localStorage.getItem('auth_token');
+      
+      // FIXED: Changed from /api/user/profile to /api/user/me
+      const response = async () => await fetch(`${apiBaseUrl}/api/user/me`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       
-      const data: UserProfileResponse = await response.json();
-      if (response.ok) {
-        setIsBotActive(data.isBotActive);
+      const res = await response();
+      const data: UserProfileResponse = await res.json();
+      
+      if (res.ok) {
+        // Safely extract isBotActive whether it's nested under data.user or at the root
+        const botStatus = data.user?.isBotActive ?? data.isBotActive ?? false;
+        setIsBotActive(Boolean(botStatus));
       }
     } catch (err) {
       console.error('Failed to load user profile', err);
@@ -44,7 +58,7 @@ export default function BotToggleCard() {
     const nextState = !isBotActive;
 
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('token') || localStorage.getItem('auth_token');
       const response = await fetch(`${apiBaseUrl}/api/bot/toggle`, {
         method: 'POST',
         headers: {
