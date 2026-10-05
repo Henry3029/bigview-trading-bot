@@ -15,7 +15,7 @@ export default function BalanceCard() {
     setError('');
     try {
       const token = localStorage.getItem('token') || localStorage.getItem('auth_token');
-      const response = await fetch(`${apiBaseUrl}/api/user/balance`, {
+      const response = await fetch(`${apiBaseUrl}/api/user/me`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
 

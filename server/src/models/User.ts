@@ -47,6 +47,10 @@ isBotActive: {
   type: Boolean,
   default: false, // Defaults to false for user safety!
 },
+availableBalanceUsd: {
+ type: Number,
+ default: 0 
+},
 
 
     // -------------------------------------------------------------

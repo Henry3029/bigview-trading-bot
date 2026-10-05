@@ -30,6 +30,7 @@ router.get('/me', authenticateToken, async (req: AuthenticatedRequest, res: Resp
         isBotActive: user.isBotActive || false, // <-- Critical for the toggle state
         hasConnectedKeys: !!(user.weexApiKey && user.weexApiKey.trim().length > 0), // <-- Critical for key status
         createdAt: user.createdAt,
+        balance: user.availableBalanceUsd || 0 
       },
     });
   } catch (err: any) {
@@ -66,46 +67,6 @@ router.post('/link-alexa', authenticateToken, async (req: any, res: any) => {
     return res.json({ success: true, message: 'Alexa account successfully linked!' });
   } catch (err: any) {
     return res.status(500).json({ success: false, error: err.message });
-  }
-});
-
-router.get('/balance', authenticateToken, async (req: AuthenticatedRequest, res: any) => {
-  try {
-    const user = await User.findById(req.userId);
-    if (!user || !user.weexApiKey || !user.weexSecretKey) {
-      return res.status(400).json({ error: 'Exchange API keys not connected' });
-    }
-
-    // Initialize WEEX exchange instance dynamically for this user
-    const exchange = new ccxt.weex({
-      apiKey: user.weexApiKey,
-      secret: user.weexSecretKey,
-      // Add passphrase if WEEX requires it
-      password: user.weexPassphrase || undefined,
-      enableRateLimit: true,
-    });
-
-    // Fetch account balance from the exchange
-    const balance = await exchange.fetchBalance();
-    
-    // Safely cast through unknown to satisfy TypeScript's strict rules
-    const freeBalances = balance.free as unknown as Record<string, number>;
-    const totalBalances = balance.total as unknown as Record<string, number>;
-
-    const freeUsdt = freeBalances['USDT'] || 0;
-    const totalUsdt = totalBalances['USDT'] || 0;
-
-
-
-    return res.json({
-      success: true,
-      free: freeUsdt,
-      total: totalUsdt,
-    });
-
-  } catch (err: any) {
-    console.error('Failed to fetch balance:', err.message);
-    return res.status(500).json({ error: 'Failed to fetch live balance from exchange' });
   }
 });
 
