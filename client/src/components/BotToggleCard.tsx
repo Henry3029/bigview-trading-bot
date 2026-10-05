@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || '';
 
 interface UserProfileResponse {
   isBotActive: boolean;
@@ -44,7 +45,7 @@ export default function BotToggleCard() {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('/api/bot/toggle', {
+      const response = await fetch(`${apiBaseUrl}/api/bot/toggle`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
