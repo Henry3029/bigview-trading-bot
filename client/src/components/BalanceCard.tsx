@@ -37,37 +37,38 @@ export default function BalanceCard() {
   }, []);
 
   return (
-    <div className="bg-[var(--background)] border border-black/10 dark:border-white/10 rounded-2xl p-6 shadow-xl max-w-md w-full flex flex-col gap-4">
+    <div className="w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-xl p-4 flex flex-col gap-3">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Wallet className="w-5 h-5 text-emerald-500" />
-          <h3 className="text-lg font-semibold">Account Balance</h3>
+          <Wallet className="w-4 h-4 text-emerald-500" />
+          <span className="text-xs font-semibold uppercase tracking-wider opacity-70">Exchange Balance</span>
         </div>
         <button
           onClick={fetchBalance}
           disabled={loading}
-          className="p-1.5 rounded-lg border hover:bg-black/5 dark:hover:bg-white/5 transition cursor-pointer"
+          className="p-1 rounded-md hover:bg-black/10 dark:hover:bg-white/10 transition cursor-pointer"
           title="Refresh Balance"
         >
-          <RefreshCw className={`w-4 h-4 opacity-70 ${loading ? 'animate-spin' : ''}`} />
+          <RefreshCw className={`w-3.5 h-3.5 opacity-60 ${loading ? 'animate-spin' : ''}`} />
         </button>
       </div>
 
       {error ? (
-        <div className="p-3 bg-amber-500/10 border border-amber-500/20 text-amber-500 text-xs rounded-lg">
-          {error} (Make sure your WEEX API keys are connected)
+        <div className="flex items-start gap-2 text-amber-500 text-xs bg-amber-500/10 p-2.5 rounded-lg border border-amber-500/20">
+          <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+          <span>Keys not connected or invalid</span>
         </div>
       ) : (
-        <div className="grid grid-cols-2 gap-4 pt-2">
-          <div className="bg-black/5 dark:bg-white/5 p-3 rounded-xl">
-            <span className="text-xs opacity-60 block">Free USDT</span>
-            <span className="text-lg font-bold text-emerald-500">
+        <div className="grid grid-cols-2 gap-3">
+          <div className="bg-[var(--background)] p-2.5 rounded-lg border border-black/5 dark:border-white/5">
+            <span className="text-[10px] uppercase opacity-60 block">Free USDT</span>
+            <span className="text-sm font-bold text-emerald-500">
               {loading && !balance ? '...' : `$${Number(balance?.free || 0).toFixed(2)}`}
             </span>
           </div>
-          <div className="bg-black/5 dark:bg-white/5 p-3 rounded-xl">
-            <span className="text-xs opacity-60 block">Total USDT</span>
-            <span className="text-lg font-bold">
+          <div className="bg-[var(--background)] p-2.5 rounded-lg border border-black/5 dark:border-white/5">
+            <span className="text-[10px] uppercase opacity-60 block">Total USDT</span>
+            <span className="text-sm font-bold">
               {loading && !balance ? '...' : `$${Number(balance?.total || 0).toFixed(2)}`}
             </span>
           </div>

@@ -3,6 +3,7 @@
 import React from 'react';
 import { X, User as UserIcon, Key, LogOut } from 'lucide-react';
 import BotToggleCard from './BotToggleCard';
+import BalanceCard from '@/components/BalanceCard';
 
 interface User {
   email?: string;
@@ -73,6 +74,8 @@ export default function UserProfileDrawer({
                 <span className="text-sm font-medium">{user.username}</span>
               </div>
             )}
+            
+            <BalanceCard />
 
             {/* API Key Action Status */}
             <div className="p-3 border border-black/10 dark:border-white/10 rounded-lg flex items-center justify-between gap-3">
