@@ -25,7 +25,7 @@ export default function BotToggleCard() {
   const fetchUserData = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('/api/user/profile', {
+      const response = await fetch(`${apiBaseUrl}/api/user/profile`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       
