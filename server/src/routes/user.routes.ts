@@ -14,7 +14,8 @@ router.get('/me', authenticateToken, async (req: AuthenticatedRequest, res: Resp
   try {
     await connectToDatabase();
 
-    const user = await User.findById(req.userId).select('-passwordHash');
+    // Select fields, keeping sensitive keys out while including status flags
+    const user = await User.findById(req.userId).select('-passwordHash -weexSecretKey -weexPassphrase');
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
@@ -23,7 +24,10 @@ router.get('/me', authenticateToken, async (req: AuthenticatedRequest, res: Resp
       user: {
         id: user._id,
         email: user.email,
+        username: user.username, // Include username if you have it in your schema
         freeUsdtBalance: user.freeUsdtBalance,
+        isBotActive: user.isBotActive || false, // <-- Critical for the toggle state
+        hasConnectedKeys: !!(user.weexApiKey && user.weexApiKey.trim().length > 0), // <-- Critical for key status
         createdAt: user.createdAt,
       },
     });
@@ -31,6 +35,7 @@ router.get('/me', authenticateToken, async (req: AuthenticatedRequest, res: Resp
     return res.status(500).json({ error: err.message });
   }
 });
+
 
 
 router.post('/link-alexa', authenticateToken, async (req: any, res: any) => {

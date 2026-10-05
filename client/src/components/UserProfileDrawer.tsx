@@ -8,6 +8,8 @@ interface User {
   email?: string;
   username?: string;
   id?: string;
+  isBotActive?: boolean;
+  hasConnectedKeys?: boolean; // <-- Added here
 }
 
 interface UserProfileDrawerProps {
@@ -72,7 +74,7 @@ export default function UserProfileDrawer({
               </div>
             )}
 
-            {/* API Key Action */}
+            {/* API Key Action Status */}
             <div className="p-3 border border-black/10 dark:border-white/10 rounded-lg flex items-center justify-between gap-3">
               <div className="flex items-center gap-2 min-w-0">
                 <Key className="w-4 h-4 text-amber-500 shrink-0" />
@@ -83,12 +85,17 @@ export default function UserProfileDrawer({
                   onClose();
                   onOpenConnectWeex();
                 }}
-                className="text-xs px-2.5 py-1 bg-amber-500/10 text-amber-500 dark:text-amber-400 border border-amber-500/20 rounded hover:bg-amber-500/20 transition cursor-pointer shrink-0"
+                className={`text-xs px-2.5 py-1 border rounded transition cursor-pointer shrink-0 ${
+                  user.hasConnectedKeys
+                    ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20'
+                    : 'bg-amber-500/10 text-amber-500 dark:text-amber-400 border-amber-500/20 hover:bg-amber-500/20'
+                }`}
               >
-                {user.email ? 'Key Active' : 'Connect Key'}
+                {user.hasConnectedKeys ? 'Key Active' : 'Connect Key'}
               </button>
             </div>
           </div>
+
           <BotToggleCard />
         </div>
 
