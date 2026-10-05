@@ -86,14 +86,15 @@ router.get('/balance', authenticateToken, async (req: AuthenticatedRequest, res:
     });
 
     // Fetch account balance from the exchange
-        const balance = await exchange.fetchBalance();
+    const balance = await exchange.fetchBalance();
     
-    // Typecast to record so TypeScript allows string indexing
-    const freeBalances = balance.free as Record<string, number>;
-    const totalBalances = balance.total as Record<string, number>;
+    // Safely cast through unknown to satisfy TypeScript's strict rules
+    const freeBalances = balance.free as unknown as Record<string, number>;
+    const totalBalances = balance.total as unknown as Record<string, number>;
 
     const freeUsdt = freeBalances['USDT'] || 0;
     const totalUsdt = totalBalances['USDT'] || 0;
+
 
 
     return res.json({
