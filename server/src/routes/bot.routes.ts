@@ -1,13 +1,14 @@
 import express from 'express';
 import User from '../models/User';
-import { authenticateToken, AuthenticatedRequest } from '../middleware/auth.middleware'; // Use your actual auth middleware
+import { authenticateToken, AuthenticatedRequest } from '../middleware/auth.middleware';
 
 const router = express.Router();
 
 // Toggle Bot Status Endpoint
-router.post('/toggle', async (req: any, res: any) => {
+router.post('/toggle', authenticateToken, async (req: AuthenticatedRequest, res: any) => {
   try {
-    const userId = req.user.id; // Assumes your auth middleware attaches the logged-in user
+    // Fixed: Use req.userId to match your auth middleware
+    const userId = req.userId; 
     const { activate } = req.body; // Expects true or false from the frontend
 
     const user = await User.findById(userId);
