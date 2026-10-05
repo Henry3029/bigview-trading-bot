@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Wallet, RefreshCw } from 'lucide-react';
+import { Wallet, RefreshCw, AlertCircle } from 'lucide-react';
 
 const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || '';
 
