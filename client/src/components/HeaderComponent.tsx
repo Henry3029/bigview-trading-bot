@@ -9,7 +9,7 @@ import NavbarComponent from './NavbarComponent';
 import ConnectWeexModal from '@/components/ConnectWeexModal';
 import UserProfileDrawer from './UserProfileDrawer';
 import AuthModal from '@/components/AuthModal';
-import BalanceCard from '@components/BalanceCard';
+import BalanceCard from '@/components/BalanceCard';
 
 export default function HeaderComponent() {
   const { user, isAuthenticated, isLoading, logout } = useAuth();
