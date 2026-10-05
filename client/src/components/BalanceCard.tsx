@@ -19,12 +19,19 @@ export default function BalanceCard() {
         headers: { 'Authorization': `Bearer ${token}` }
       });
 
-      const data = await response.json();
+            const data = await response.json();
       if (!response.ok) {
         throw new Error(data.error || 'Failed to load balance');
       }
 
-      setBalance({ free: data.free, total: data.total });
+      // Extract the cached balance from the user object sent by /api/user/me
+      const userBalance = data.user?.balance || 0;
+
+      setBalance({ 
+        free: userBalance, 
+        total: userBalance 
+      });
+
     } catch (err: any) {
       setError(err.message);
     } finally {
