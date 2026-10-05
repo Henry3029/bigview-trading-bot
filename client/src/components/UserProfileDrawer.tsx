@@ -91,7 +91,7 @@ export default function UserProfileDrawer({
                     : 'bg-amber-500/10 text-amber-500 dark:text-amber-400 border-amber-500/20 hover:bg-amber-500/20'
                 }`}
               >
-                {user.hasConnectedKeys ? 'Key Active' : 'Connect Key'}
+                {user.hasConnectedKeys ? 'Update Keys' : 'Connect Key'}
               </button>
             </div>
           </div>
