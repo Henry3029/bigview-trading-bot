@@ -165,7 +165,7 @@ export const GetPortfolioBalanceIntentHandler = {
 
     let totalUsdt = "0.00";
     let freeUsdt = "0.00";
-    let winRate = DEMO_JUDGE_USER.winRatePercentage.toString();
+        let winRate = DEMO_JUDGE_USER.winRatePercentage.toString();
     let activeCount = DEMO_JUDGE_USER.activeEnginesCount;
     let welcomeName = "Judge";
 
