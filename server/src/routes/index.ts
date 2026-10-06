@@ -5,6 +5,7 @@ import engineRoutes from './engine.routes.js';
 import tradeRoutes from './trade.routes.js';
 import killSwitchRoutes from './kill-switch.routes.js'; // Renamed file to camelCase
 import botRoutes from './bot.routes.js';
+import oAuthRoutes from './oAuth.routes.js';
 
 const router = express.Router();
 
@@ -14,5 +15,6 @@ router.use('/engine', engineRoutes);
 router.use('/trade', tradeRoutes);
 router.use('/kill-switch', killSwitchRoutes); // Changed path to lowercase kebab-case
 router.use('/bot', botRoutes);
+router.use('/oAuth', oAuthRoutes);
 
 export default router;

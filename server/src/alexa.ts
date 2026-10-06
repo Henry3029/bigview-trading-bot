@@ -113,7 +113,7 @@ const LaunchRequestHandler = {
     return Alexa.getRequestType(handlerInput.requestEnvelope) === 'LaunchRequest';
   },
   handle(handlerInput: any) {
-    const speechText = "WEEX Trading Engine online. You can ask for portfolio balance, asset prices, bot status, or trigger emergency controls.";
+    const speechText = "Exchange Trading Engine online. You can ask for portfolio balance, asset prices, bot status, or trigger emergency controls.";
     return handlerInput.responseBuilder
       .speak(speechText)
       .reprompt(speechText)
@@ -159,8 +159,9 @@ export const GetPortfolioBalanceIntentHandler = {
     );
   },
   async handle(handlerInput: any) {
-    // 1. Extract the unique Amazon User ID from the incoming voice request
-    const alexaUserId = handlerInput.requestEnvelope.context?.System?.user?.userId;
+    // 1. Extract the Access Token passed by Alexa (which is your MongoDB user _id string!)
+    const accessToken = handlerInput.requestEnvelope.session?.user?.accessToken || 
+                          handlerInput.requestEnvelope.context?.System?.user?.accessToken;
 
     let totalUsdt = "0.00";
     let freeUsdt = "0.00";
@@ -169,26 +170,32 @@ export const GetPortfolioBalanceIntentHandler = {
     let welcomeName = "Judge";
 
     try {
-      // 2. Connect to your production MongoDB Atlas cluster
       await connectToDatabase();
       const usersCollection = mongoose.connection.collection('users');
 
-      // 3. Search for a user whose document has this alexaUserId linked
-      const dbUser = await usersCollection.findOne({ alexaUserId });
+      // 2. If an access token exists, query MongoDB directly using the user's ObjectId
+      if (accessToken && mongoose.Types.ObjectId.isValid(accessToken)) {
+        const dbUser = await usersCollection.findOne({ _id: new mongoose.Types.ObjectId(accessToken) });
 
-      if (dbUser) {
-        // Real Linked User Found in MongoDB!
-        welcomeName = dbUser.name || dbUser.email?.split('@')[0] || "Trader";
-        totalUsdt = (dbUser.portfolioValueUsd || 1000.00).toFixed(2);
-        freeUsdt = (dbUser.availableBalanceUsd || 500.00).toFixed(2);
+        if (dbUser) {
+          welcomeName = dbUser.name || dbUser.email?.split('@')[0] || "Trader";
+          totalUsdt = (dbUser.portfolioValueUsd || 1000.00).toFixed(2);
+          freeUsdt = (dbUser.availableBalanceUsd || 500.00).toFixed(2);
+        } else {
+          // Fallback if token doesn't match a real DB record
+          useDemoDefaults();
+        }
       } else {
-        // Fallback: If no account is linked yet (e.g. the Judge testing), use demo data
-        welcomeName = "Judge";
-        totalUsdt = DEMO_JUDGE_USER.portfolioValueUsd.toFixed(2);
-        freeUsdt = DEMO_JUDGE_USER.availableBalanceUsd.toFixed(2);
+        // Fallback for unlinked users / Judges testing without logging in
+        useDemoDefaults();
       }
     } catch (err) {
-      console.error("❌ Database lookup failed in Alexa handler, using demo fallback:", err);
+      console.error("❌ Database lookup failed, using demo fallback:", err);
+      useDemoDefaults();
+    }
+
+    function useDemoDefaults() {
+      welcomeName = "Judge";
       totalUsdt = DEMO_JUDGE_USER.portfolioValueUsd.toFixed(2);
       freeUsdt = DEMO_JUDGE_USER.availableBalanceUsd.toFixed(2);
     }
@@ -198,7 +205,6 @@ export const GetPortfolioBalanceIntentHandler = {
 
     const responseBuilder = handlerInput.responseBuilder.speak(speechText);
 
-    // If device has a screen (Echo Show / Developer Console Simulator)
     if (supportsAPL(handlerInput)) {
       responseBuilder.addDirective({
         type: 'Alexa.Presentation.APL.RenderDocument',
@@ -223,6 +229,7 @@ export const GetPortfolioBalanceIntentHandler = {
     return responseBuilder.getResponse();
   }
 };
+
 
 
 const GetAssetAllocationIntentHandler = {
