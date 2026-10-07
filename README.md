@@ -1,4 +1,4 @@
-​#🎙️ Bigview: Voice-Controlled Trading & Ecosystem Management
+#​#🎙️ Bigview: Voice-Controlled Trading & Ecosystem Management
 ​Bigview is an advanced, multi-engine trading assistant integrated with Amazon Alexa and powered by a secure Node.js backend. It enables hands-free portfolio tracking, active position monitoring, and ecosystem-wide emergency controls (such as a multi-turn kill switch) using voice commands and visual APL (Alexa Presentation Language) cards.
 
 ​✨ Key Features
