@@ -1,34 +1,41 @@
-# ⚡ Voice-Enabled Algorithmic Trading Bot | Powered by Alexa+ & AWS
+​#🎙️ Bigview: Voice-Controlled Trading & Ecosystem Management
+​Bigview is an advanced, multi-engine trading assistant integrated with Amazon Alexa and powered by a secure Node.js backend. It enables hands-free portfolio tracking, active position monitoring, and ecosystem-wide emergency controls (such as a multi-turn kill switch) using voice commands and visual APL (Alexa Presentation Language) cards.
 
-An automated, full-stack dual-engine algorithmic trading engine hosted on AWS EC2, integrated with an Alexa+ skill interface and a real-time React monitoring terminal. Users can manage trades, monitor engine performance, and receive real-time execution updates via voice commands or the streaming console interface.
+​✨ Key Features
+​Voice-Controlled Trading Actions: Check portfolio balances, review active positions, and fetch trade histories completely hands-free.
+​Multi-Turn Safety Protocols: Built-in confirmation workflows (e.g., executing an emergency kill switch across multiple trading engines requires explicit voice confirmation to prevent accidental triggers).
+​Visual APL Dashboards: Renders dynamic visual cards on supported Alexa devices (like Echo Show simulators) alongside voice feedback.
+​Secure Backend API: Handles account linking tokens, API key routing, and state management securely via Express.
 
----
+​👨‍⚖️ Instructions for Judges (Evaluation & Testing)
+​Because Amazon Alexa skills in development mode require specific testing handles, we have provided a companion web dashboard hosted on Vercel so you can easily review the application interface, test data, and account configurations.
+​1. Exploring the Web Dashboard
+​You can log in to the live web platform to inspect the account layout and analytics without setting up live exchange API keys. Use the following mock credentials:
+​Email / Username: judge_demo@example.com
+​Password: Hackathon2026
 
-## 🎯 Value & User Automation Benefits
+Note on Sample Data: Logging in with these credentials grants access to a pre-configured sandbox profile populated with sample data, including simulated active positions on WEEX, historical trade logs, and mock portfolio balances so you can evaluate the UI and backend response behavior immediately.
 
-Automated execution paired with Alexa+ voice controls provides traders key advantages over manual platforms:
+invocation name "big view"
+utterance: 
+Alexa, open big view.
+How much is my portfolio worth?
+What are my top holdings?
+Check trading engine status.
+Alexa, ask big view to pause trading.
+Resume the bot
+Alexa, ask big view what is the price of Bitcoin?
+Alexa, ask big view how is Ethereum performing today?
+Show recent activity.
+What is the bot currently doing?
 
-* **🎙️ Voice-Controlled Command & Control:** Query live strategy status, total PnL, and individual engine performance hands-free using natural Alexa+ voice interactions.
-* **⚡ 24/7 Low-Latency Execution:** Backend server runs continuously on AWS EC2, ensuring strategies run non-stop without needing active browser sessions.
-* **🛡️ Systematic Risk Controls:** Enforces automated Stop-Loss (SL) and Take-Profit (TP) parameters to eliminate emotional trading mistakes.
-* **📊 Dual-Engine Strategy Architecture:**
-  * **Engine 1 (Major Assets):** Low-volatility execution focused on high-liquidity assets (BTC, ETH, SOL).
-  * **Engine 2 (Momentum Altcoins):** High-volatility momentum execution for altcoins.
-* **📡 Real-Time Observability:** Live execution logs and market ticks stream directly to a custom web terminal console via WebSockets.
 
----
+🛠️ Tech Stack
+Backend: Node.js, Express, TypeScript
+Voice & UI: Alexa Skills Kit (ASK), Alexa Presentation Language (APL)
+Frontend Dashboard: React / Next.js deployed on Vercel
+Security & Auth: OAuth2 Account Linking, Secure Session Handlers
 
-## 🏗️ System Architecture & Connection Flow
-
-## 🛠️ Tech Stack & Amazon Tools
-
-* **Voice Integration:** Alexa+ Skill SDK & Webhooks
-* **Cloud Infrastructure:** AWS EC2 (Ubuntu instance running PM2 process manager), AWS CloudWatch
-* **AI Developer Tooling:** Amazon Q Developer (used for generating Alexa+ handlers and WebSocket routes)
-* **Backend Runtime:** Node.js, Express.js, Socket.io (WebSockets)
-* **Frontend Console:** React, Next.js, Tailwind CSS
-
----
 
 ## 🚀 Getting Started & Local Setup
 
@@ -73,6 +80,6 @@ npm install -g pm2
 
 # Start Backend Server on EC2
 cd server
-pm2 start AI.ts --name "trading-engine"
+pm2 start AI.ts --name "bigview-engine"
 pm2 save
 pm2 startup
