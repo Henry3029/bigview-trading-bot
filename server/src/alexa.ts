@@ -255,6 +255,116 @@ const GetAssetAllocationIntentHandler = {
 };
 
 // =========================================================================
+// PERSONALIZED USER POSITIONS (MONGODB DRIVEN)
+// =========================================================================
+
+export const GetUserActivePositionsIntentHandler = {
+  canHandle(handlerInput: any) {
+    return (
+      Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest' &&
+      Alexa.getIntentName(handlerInput.requestEnvelope) === 'GetUserActivePositionsIntent'
+    );
+  },
+  async handle(handlerInput: any) {
+    const accessToken = handlerInput.requestEnvelope.session?.user?.accessToken || 
+                          handlerInput.requestEnvelope.context?.System?.user?.accessToken;
+
+    let activePositionsText = "You currently have no active personal positions open.";
+
+    try {
+      await connectToDatabase();
+      const usersCollection = mongoose.connection.collection('users');
+
+      if (accessToken && mongoose.Types.ObjectId.isValid(accessToken)) {
+        const dbUser = await usersCollection.findOne({ _id: new mongoose.Types.ObjectId(accessToken) });
+
+        // If user has personal positions saved in MongoDB
+        if (dbUser && dbUser.positions && dbUser.positions.length > 0) {
+          const formattedPositions = dbUser.positions.map((p: any) => 
+            `${p.asset} entered at ${p.entryPrice} USDT`
+          ).join(', ');
+          activePositionsText = `Your personal active positions are: ${formattedPositions}.`;
+        } else if (dbUser) {
+          activePositionsText = "Your account is active, but you have no open positions right now.";
+        } else {
+          useJudgeFallback();
+        }
+      } else {
+        useJudgeFallback();
+      }
+    } catch (err) {
+      console.error("❌ Database lookup failed for active positions, using fallback:", err);
+      useJudgeFallback();
+    }
+
+    function useJudgeFallback() {
+      // Fallback to demo judge positions if unlinked
+      activePositionsText = "Your hackathon demo positions are active on BTC, ETH, SOL, and Dogecoin engines.";
+    }
+
+    return handlerInput.responseBuilder.speak(activePositionsText).getResponse();
+  }
+};
+
+
+// =========================================================================
+// PERSONALIZED TRADE HISTORY (MONGODB DRIVEN)
+// =========================================================================
+
+export const GetUserTradeHistoryIntentHandler = {
+  canHandle(handlerInput: any) {
+    return (
+      Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest' &&
+      Alexa.getIntentName(handlerInput.requestEnvelope) === 'GetUserTradeHistoryIntent'
+    );
+  },
+  async handle(handlerInput: any) {
+    const accessToken = handlerInput.requestEnvelope.session?.user?.accessToken || 
+                          handlerInput.requestEnvelope.context?.System?.user?.accessToken;
+
+    let historyText = "No trade history found for your account.";
+
+    try {
+      await connectToDatabase();
+      const usersCollection = mongoose.connection.collection('users');
+
+      if (accessToken && mongoose.Types.ObjectId.isValid(accessToken)) {
+        const dbUser = await usersCollection.findOne({ _id: new mongoose.Types.ObjectId(accessToken) });
+
+        // If user has personal trade history saved in MongoDB
+        if (dbUser && dbUser.tradeHistory && dbUser.tradeHistory.length > 0) {
+          const latestTrade = dbUser.tradeHistory[0]; // Most recent
+          historyText = `Your last recorded trade was a ${latestTrade.type} order for ${latestTrade.asset} at ${latestTrade.price} USDT.`;
+        } else if (dbUser) {
+          historyText = "Your account has no recorded trade history yet.";
+        } else {
+          useJudgeFallback();
+        }
+      } else {
+        useJudgeFallback();
+      }
+    } catch (err) {
+      console.error("❌ Database lookup failed for trade history, using fallback:", err);
+      useJudgeFallback();
+    }
+
+    function useJudgeFallback() {
+      // Fallback to systemLogsStore for judges testing unlinked
+      const tradeLogs = systemLogsStore.filter(log => log.type === 'BUY' || log.type === 'TAKE_PROFIT' || log.type === 'STOP_LOSS');
+      if (tradeLogs.length > 0) {
+        const latest = tradeLogs[0];
+        historyText = `Hackathon demo mode: Last recorded trade on ${latest.engine}: ${latest.message}.`;
+      } else {
+        historyText = "No demo trade history is currently available.";
+      }
+    }
+
+    return handlerInput.responseBuilder.speak(historyText).getResponse();
+  }
+};
+
+
+// =========================================================================
 // CATEGORY B: BOT STATUS & ENGINE CONTROLS
 // =========================================================================
 
@@ -504,6 +614,8 @@ const skillBuilder = Alexa.SkillBuilders.custom()
     CancelAndStopIntentHandler,
     GetPortfolioBalanceIntentHandler,
     GetAssetAllocationIntentHandler,
+    GetUserActivePositionsIntentHandler,
+    GetUserTradeHistoryIntentHandler  
     GetBotStatusIntentHandler,
     ToggleTradingEngineIntentHandler,
     ConfirmActionIntentHandler,
