@@ -615,7 +615,7 @@ const skillBuilder = Alexa.SkillBuilders.custom()
     GetPortfolioBalanceIntentHandler,
     GetAssetAllocationIntentHandler,
     GetUserActivePositionsIntentHandler,
-    GetUserTradeHistoryIntentHandler  
+    GetUserTradeHistoryIntentHandler,  
     GetBotStatusIntentHandler,
     ToggleTradingEngineIntentHandler,
     ConfirmActionIntentHandler,
