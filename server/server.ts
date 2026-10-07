@@ -47,11 +47,11 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization'],
 }));
 
-// 1. Parse JSON bodies FIRST so req.body is populated
-app.use(express.json());
-
-// 2. NOW Mount Alexa route (req.body is fully parsed)
+// 1. NOW Mount Alexa route (req.body is fully parsed)
 app.use('/api/alexa', alexaRouter);
+
+// 2. Parse JSON bodies FIRST so req.body is populated
+app.use(express.json());
 
 // Catch-all for malformed JSON payloads
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
